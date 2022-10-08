@@ -18,13 +18,17 @@ import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
+import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 
 public class Parser {
 	
-	public static final String projectPath = "/home/e20210011437/eclipse-workspace/testProjectInterface/";
+	public static final String projectPath = "/Users/rongsunying/eclipse-workspace/test1carre/";
 	public static final String projectSourcePath = projectPath + "/src";
-	public static final String jrePath = "/usr/lib/jvm/java-8-openjdk-amd64/jre/";
+	// MacOs
+	public static final String jrePath = "/Library/Java/JavaVirtualMachines/jdk1.8.0_221.jdk/Contents/Home/jre/";
+	// Linux
+//	public static final String jrePath = "/usr/lib/jvm/java-8-openjdk-amd64/jre/";
 	
 	public static void main(String[] args) throws IOException {
 
@@ -38,7 +42,9 @@ public class Parser {
 			// System.out.println(content);
 
 			CompilationUnit parse = parse(content.toCharArray());
-
+			// print class info
+			printClassInfo(parse);
+			
 			// print methods info
 			printMethodInfo(parse);
 
@@ -47,6 +53,7 @@ public class Parser {
 			
 			//print method invocations
 			printMethodInvocationInfo(parse);
+			System.out.println("------------");
 
 		}
 	}
@@ -88,6 +95,17 @@ public class Parser {
 		return (CompilationUnit) parser.createAST(null); // create and parse
 	}
 
+	// navigate class information
+		public static void printClassInfo(CompilationUnit parse) {
+			ClassDeclarationVisitor visitor = new ClassDeclarationVisitor();
+			parse.accept(visitor);
+
+			for (TypeDeclaration clas : visitor.getClasses()) {
+				System.out.println("Class name: " + clas.getName());
+			}
+
+		}
+		
 	// navigate method information
 	public static void printMethodInfo(CompilationUnit parse) {
 		MethodDeclarationVisitor visitor = new MethodDeclarationVisitor();
