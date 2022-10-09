@@ -3,9 +3,14 @@ package partie2;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Scanner;
+import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
 import org.eclipse.core.internal.utils.FileUtil;
@@ -39,11 +44,13 @@ public class Parser {
 	public static float classesNumber;
 	public static float methodsNumber;
 	public static List<String> packages = new ArrayList<>();
-	public static float fieldNumber;
-	public static float statementsNumber;
+	public static float attributesNumber;
+	public static float statementsNumberMethod;
 	public static float statementsAllNumber;
-	public static Map<String, Float> class_methodsNumber = new HashMap<String, Float>();
-	public static Map<String, Float> class_fieldsNumber = new HashMap<String, Float>();
+	public static Map<SimpleName, Integer> class_methodsNumber = new HashMap<SimpleName, Integer>();
+	public static Map<SimpleName, Integer> class_attributesNumber = new HashMap<SimpleName, Integer>();
+	public static Map<SimpleName, Integer> method_statementsNumber = new HashMap<SimpleName, Integer>();
+	public static Map<SimpleName, Integer> method_paramNumber = new HashMap<SimpleName, Integer>();
 	
 	public static void main(String[] args) throws IOException {
 
@@ -63,8 +70,8 @@ public class Parser {
 			// print class info
 			printClassInfo(parse);
 			
-			// print field info
-			printFieldInfo(parse);
+			// print attribute info
+			printAttributeInfo(parse);
 			
 			// print methods info
 			printMethodInfo(parse);
@@ -84,15 +91,87 @@ public class Parser {
 
 		}
 		// whole application
-		System.out.println("Class number of application: " + classesNumber);
-		System.out.println("Method number of application: " + methodsNumber);
-		System.out.println("Package number of application: " + packages.size());
-		System.out.println("Average method number per class: " + methodsNumber/classesNumber);
-		System.out.println("Field declaration number of application: " + fieldNumber);
-		System.out.println("Average field declaration number per class: " + fieldNumber/classesNumber);
-		System.out.println("All statement number of application: " + statementsAllNumber);
-		System.out.println("Statement number of application's methods: " + statementsNumber);
-		System.out.println("Average statement number per method: " + statementsNumber/methodsNumber);
+		System.out.println("Package number of application: " + packages.size() + "\n");
+		System.out.println("Class number of application: " + classesNumber + "\n");
+		System.out.println("Attribute number of application: " + attributesNumber + "\n");
+		System.out.println("Method number (in classes) of application: " + methodsNumber + "\n");
+		System.out.println("All statement number of application: " + statementsAllNumber + "\n");
+		System.out.println("Statement number of application's methods: " + statementsNumberMethod + "\n");
+		
+		System.out.println("Average attribute number per class: " + attributesNumber/classesNumber + "\n");
+		System.out.println("Average method number per class: " + methodsNumber/classesNumber + "\n");
+		System.out.println("Average statement number per method: " + statementsNumberMethod/methodsNumber + "\n");
+
+		Map<SimpleName, Integer> class_attributesNumber_sorted = class_attributesNumber
+		        .entrySet()
+		        .stream()
+		        .sorted(Collections.reverseOrder(Entry.comparingByValue()))
+				.collect(Collectors.toMap(entry -> entry.getKey(), entry -> entry.getValue(),
+						(entry1, entry2) -> entry2, LinkedHashMap::new));
+	    System.out.println("Class - attributes number: " + class_attributesNumber_sorted + "\n");
+	    
+	    Map<SimpleName, Integer> class_methodsNumber_sorted = class_methodsNumber
+		        .entrySet()
+		        .stream()
+		        .sorted(Collections.reverseOrder(Entry.comparingByValue()))
+				.collect(Collectors.toMap(entry -> entry.getKey(), entry -> entry.getValue(),
+						(entry1, entry2) -> entry2, LinkedHashMap::new));
+	    System.out.println("Class - methods number: " + class_methodsNumber_sorted + "\n");
+	    
+//	    The 10% of classes that have the most attributes
+	    int top10ClasNum = Math.round(classesNumber*0.1) < 1 ? 1 : (int)Math.round(classesNumber*0.1);
+	    
+	    List<SimpleName> clasAttributeTop = new ArrayList<SimpleName>(class_attributesNumber_sorted.keySet())
+	    		.subList(0, top10ClasNum);
+	    System.out.println("The 10% of classes that have the most attributes: ");
+	    clasAttributeTop.forEach(System.out::println);
+	    
+//	    The 10% of classes that have the most methods
+	    List<SimpleName> clasMethodTop = new ArrayList<SimpleName>(class_methodsNumber_sorted.keySet())
+	    		.subList(0, top10ClasNum);
+	    System.out.println("\n" + "The 10% of classes that have the most methods: ");
+	    clasMethodTop.forEach(System.out::println);
+	    
+//	    Classes that are part of the two previous categories at the same time
+	    List<SimpleName> commonClasTop = new ArrayList<SimpleName>(clasAttributeTop);
+	    commonClasTop.retainAll(clasMethodTop);
+	    System.out.println("\n" + "The 10% of classes that have the most methods: ");
+	    commonClasTop.forEach(System.out::println);
+	    
+//	    The 10% of methods that have the largest number of lines of code (for class)
+	    Map<SimpleName, Integer> method_statementsNumber_sorted = method_statementsNumber
+		        .entrySet()
+		        .stream()
+		        .sorted(Collections.reverseOrder(Entry.comparingByValue()))
+				.collect(Collectors.toMap(entry -> entry.getKey(), entry -> entry.getValue(),
+						(entry1, entry2) -> entry2, LinkedHashMap::new));
+	    System.out.println("\n" + "Method - statements number: " + method_statementsNumber_sorted + "\n");
+	    
+	    int top10MethodNum = Math.round(methodsNumber*0.1) < 1 ? 1 : (int)Math.round(methodsNumber*0.1);
+	    List<SimpleName> methodStateTop = new ArrayList<SimpleName>(method_statementsNumber_sorted.keySet())
+	    		.subList(0, top10MethodNum);
+	    System.out.println("The 10% of methods that have the largest number of statements (for class): ");
+	    methodStateTop.forEach(System.out::println);
+	    
+//	    The maximum number of parameters compared to all methods of the application
+	    Map<SimpleName, Integer> method_paramNumber_sorted = method_paramNumber
+		        .entrySet()
+		        .stream()
+		        .sorted(Collections.reverseOrder(Entry.comparingByValue()))
+				.collect(Collectors.toMap(entry -> entry.getKey(), entry -> entry.getValue(),
+						(entry1, entry2) -> entry2, LinkedHashMap::new));
+	    System.out.println("\n" + "Method - parameters number: " + method_paramNumber_sorted + "\n");
+	    System.out.println("The maximum number of parameters compared to all methods of the application: " 
+	    		+ method_paramNumber_sorted.values().stream().findFirst().get()+ "\n");
+	    
+//	    Classes that have more than X methods (the value of X is given)
+	    Scanner sc= new Scanner(System.in);
+	    System.out.print("Enter a number to show classes that have more than this number of methods: ");  
+	    int num= sc.nextInt();
+	    Map<SimpleName, Integer> class_methodsNumberX = class_methodsNumber_sorted.entrySet()
+	            .stream().filter(x->x.getValue() > num)
+	            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+	    System.out.println("Classes that have more than "+ num + " methods: " + class_methodsNumberX);
 	}
 
 	// read all java files from specific folder
@@ -166,28 +245,51 @@ public class Parser {
 		}
 	}
 	
-	// navigate field information
-	public static void printFieldInfo(CompilationUnit parse) {
-		FieldDeclarationVisitor visitor = new FieldDeclarationVisitor();
-		parse.accept(visitor);
-		
-		for (FieldDeclaration field : visitor.getFields()) {
-			System.out.println("Field name: " + field);
+	// navigate attribute information
+	public static void printAttributeInfo(CompilationUnit parse) {
+		ClassDeclarationVisitor visitor1 = new ClassDeclarationVisitor();
+		parse.accept(visitor1);
+		for (TypeDeclaration clas : visitor1.getClasses()) {
+			Integer attributeEachClass = 0;
+			FieldDeclarationVisitor visitor2 = new FieldDeclarationVisitor();
+			clas.accept(visitor2);
+			
+			for (FieldDeclaration field : visitor2.getFields()) {
+				
+				VariableDeclarationFragmentVisitor visitor3 = new VariableDeclarationFragmentVisitor();
+				field.accept(visitor3);
+
+				for (VariableDeclarationFragment variableDeclarationFragment : visitor3
+						.getVariables()) {
+					System.out.println("Attribute name in this class: "
+							+ variableDeclarationFragment.getName());
+				}
+				attributesNumber = attributesNumber + visitor3.getVariablesNumber();
+				attributeEachClass = attributeEachClass + visitor3.getVariablesNumber();
+			}
+			class_attributesNumber.put(clas.getName(), (Integer)attributeEachClass);
 		}
-		fieldNumber = fieldNumber + visitor.getFieldsNumber();
 	}
 		
 	// navigate method information
 	public static void printMethodInfo(CompilationUnit parse) {
-		MethodDeclarationVisitor visitor = new MethodDeclarationVisitor();
-		parse.accept(visitor);
-
-		for (MethodDeclaration method : visitor.getMethods()) {
-			System.out.println("Method name: " + method.getName()
-					+ " Return type: " + method.getReturnType2());
+		ClassDeclarationVisitor visitor1 = new ClassDeclarationVisitor();
+		parse.accept(visitor1);
+		
+		for (TypeDeclaration clas : visitor1.getClasses()) {
+			
+			MethodDeclarationVisitor visitor = new MethodDeclarationVisitor();
+			clas.accept(visitor);
+		
+			for (MethodDeclaration method : visitor.getMethods()) {
+				System.out.println("Method name: " + method.getName()
+						+ " Return type: " + method.getReturnType2());
+				method_paramNumber.put(method.getName(), method.parameters().size());
+			}
+			methodsNumber = methodsNumber + visitor.getMethodsNumber();
+			class_methodsNumber.put(clas.getName(), (Integer)visitor.getMethodsNumber());
+			
 		}
-		methodsNumber = methodsNumber + visitor.getMethodsNumber();
-
 	}
 
 	// navigate variables inside method
@@ -220,12 +322,9 @@ public class Parser {
 			
 			StatementVisitor visitor2 = new StatementVisitor();
 			method.accept(visitor2);
-			
-			for (Statement state : visitor2.getStatements()) {
-//				System.out.println("Statement: "+state);
-			}
-			System.out.println("Statement number of this method: " + visitor2.getStatementsNumber());
-			statementsNumber = statementsNumber + visitor2.getStatementsNumber();
+		
+			statementsNumberMethod = statementsNumberMethod + visitor2.getStatementsNumber();
+			method_statementsNumber.put(method.getName(), (Integer)visitor2.getStatementsNumber());
 		}
 	}
 	

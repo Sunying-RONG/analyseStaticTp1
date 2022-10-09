@@ -18,7 +18,7 @@ public class FieldDeclarationVisitor extends ASTVisitor {
 		return fields;
 	}
 	
-	public int getFieldsNumber() {
+	public float getFieldsNumber() {
 		return fields.size();
 	}
 }

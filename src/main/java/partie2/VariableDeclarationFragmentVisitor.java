@@ -17,4 +17,8 @@ public class VariableDeclarationFragmentVisitor extends ASTVisitor {
 	public List<VariableDeclarationFragment> getVariables() {
 		return variables;
 	}
+	
+	public int getVariablesNumber() {
+		return variables.size();
+	}
 }
