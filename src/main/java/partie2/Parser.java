@@ -1,8 +1,10 @@
-package step2;
+package partie2;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
@@ -16,10 +18,14 @@ import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
+import org.eclipse.jdt.core.dom.PackageDeclaration;
+import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
+import org.eclipse.jdt.core.dom.Statement;
 
 public class Parser {
 	
@@ -30,20 +36,35 @@ public class Parser {
 	// Linux
 //	public static final String jrePath = "/usr/lib/jvm/java-8-openjdk-amd64/jre/";
 	
+	public static float classesNumber;
+	public static float methodsNumber;
+	public static List<String> packages = new ArrayList<>();
+	public static float fieldNumber;
+	public static float statementsNumber;
+	public static float statementsAllNumber;
+	public static Map<String, Float> class_methodsNumber = new HashMap<String, Float>();
+	public static Map<String, Float> class_fieldsNumber = new HashMap<String, Float>();
+	
 	public static void main(String[] args) throws IOException {
 
 		// read java files
 		final File folder = new File(projectSourcePath);
 		ArrayList<File> javaFiles = listJavaFilesForFolder(folder);
 
-		//
+		// every file
 		for (File fileEntry : javaFiles) {
 			String content = FileUtils.readFileToString(fileEntry);
 			// System.out.println(content);
 
 			CompilationUnit parse = parse(content.toCharArray());
+			// print package info
+			printPackageInfo(parse);
+			
 			// print class info
 			printClassInfo(parse);
+			
+			// print field info
+			printFieldInfo(parse);
 			
 			// print methods info
 			printMethodInfo(parse);
@@ -51,11 +72,27 @@ public class Parser {
 			// print variables info
 			printVariableInfo(parse);
 			
-			//print method invocations
+			// print method invocations
 			printMethodInvocationInfo(parse);
+			
+			// print statement info
+			printStatementInfo(parse);
+			
+			// print all statement info
+			printAllStatementInfo(parse);
 			System.out.println("------------");
 
 		}
+		// whole application
+		System.out.println("Class number of application: " + classesNumber);
+		System.out.println("Method number of application: " + methodsNumber);
+		System.out.println("Package number of application: " + packages.size());
+		System.out.println("Average method number per class: " + methodsNumber/classesNumber);
+		System.out.println("Field declaration number of application: " + fieldNumber);
+		System.out.println("Average field declaration number per class: " + fieldNumber/classesNumber);
+		System.out.println("All statement number of application: " + statementsAllNumber);
+		System.out.println("Statement number of application's methods: " + statementsNumber);
+		System.out.println("Average statement number per method: " + statementsNumber/methodsNumber);
 	}
 
 	// read all java files from specific folder
@@ -94,6 +131,19 @@ public class Parser {
 		
 		return (CompilationUnit) parser.createAST(null); // create and parse
 	}
+	
+	// navigate package information
+	public static void printPackageInfo(CompilationUnit parse) {
+		PackageDeclarationVisitor visitor = new PackageDeclarationVisitor();
+		parse.accept(visitor);
+		
+		for (PackageDeclaration pack : visitor.getPackages()) {
+			System.out.println("Package: " + pack);
+			if (!packages.contains(pack.toString())) {
+				packages.add(pack.toString());
+			}
+		}
+	}
 
 	// navigate class information
 	public static void printClassInfo(CompilationUnit parse) {
@@ -103,7 +153,28 @@ public class Parser {
 		for (TypeDeclaration clas : visitor.getClasses()) {
 			System.out.println("Class name: " + clas.getName());
 		}
-
+		classesNumber = classesNumber + visitor.getClassesNumber();
+	}
+	
+	// navigate field information
+	public static void printFieldAccessInfo(CompilationUnit parse) {
+		FieldAccessVisitor visitor = new FieldAccessVisitor();
+		parse.accept(visitor);
+		
+		for (SimpleName field : visitor.getFields()) {
+			System.out.println("Field access name: " + field.getFullyQualifiedName());
+		}
+	}
+	
+	// navigate field information
+	public static void printFieldInfo(CompilationUnit parse) {
+		FieldDeclarationVisitor visitor = new FieldDeclarationVisitor();
+		parse.accept(visitor);
+		
+		for (FieldDeclaration field : visitor.getFields()) {
+			System.out.println("Field name: " + field);
+		}
+		fieldNumber = fieldNumber + visitor.getFieldsNumber();
 	}
 		
 	// navigate method information
@@ -115,6 +186,7 @@ public class Parser {
 			System.out.println("Method name: " + method.getName()
 					+ " Return type: " + method.getReturnType2());
 		}
+		methodsNumber = methodsNumber + visitor.getMethodsNumber();
 
 	}
 
@@ -139,6 +211,36 @@ public class Parser {
 		}
 	}
 	
+	// navigate statements inside method
+	public static void printStatementInfo(CompilationUnit parse) {
+		
+		MethodDeclarationVisitor visitor1 = new MethodDeclarationVisitor();
+		parse.accept(visitor1);
+		for (MethodDeclaration method : visitor1.getMethods()) {
+			
+			StatementVisitor visitor2 = new StatementVisitor();
+			method.accept(visitor2);
+			
+			for (Statement state : visitor2.getStatements()) {
+//				System.out.println("Statement: "+state);
+			}
+			System.out.println("Statement number of this method: " + visitor2.getStatementsNumber());
+			statementsNumber = statementsNumber + visitor2.getStatementsNumber();
+		}
+	}
+	
+	// navigate all statements in application
+	public static void printAllStatementInfo(CompilationUnit parse) {
+		
+		StatementAllVisitor visitor = new StatementAllVisitor();
+		parse.accept(visitor);
+		
+//			for (Statement state : visitor.getStatements()) {
+//				System.out.println("Statement: "+state);
+//			}
+		statementsAllNumber = statementsAllNumber + visitor.getStatementsNumber();
+	}
+	
 	// navigate method invocations inside method
 	public static void printMethodInvocationInfo(CompilationUnit parse) {
 
@@ -156,5 +258,6 @@ public class Parser {
 
 		}
 	}
+	
 
 }
