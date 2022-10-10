@@ -322,7 +322,6 @@ public class Parser {
 			
 			StatementVisitor visitor2 = new StatementVisitor();
 			method.accept(visitor2);
-		
 			statementsNumberMethod = statementsNumberMethod + visitor2.getStatementsNumber();
 			method_statementsNumber.put(method.getName(), (Integer)visitor2.getStatementsNumber());
 		}
