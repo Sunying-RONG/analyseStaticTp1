@@ -1,5 +1,7 @@
 package partie2;
 
+import java.awt.Color;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -11,6 +13,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Scanner;
 import java.util.stream.Collectors;
+
+import javax.imageio.ImageIO;
 
 import org.apache.commons.io.FileUtils;
 import org.eclipse.core.internal.utils.FileUtil;
@@ -30,6 +34,14 @@ import org.eclipse.jdt.core.dom.PackageDeclaration;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
+import org.jgrapht.ext.JGraphXAdapter;
+import org.jgrapht.graph.DefaultDirectedGraph;
+import org.jgrapht.graph.DefaultEdge;
+
+import com.mxgraph.layout.mxCircleLayout;
+import com.mxgraph.layout.mxIGraphLayout;
+import com.mxgraph.util.mxCellRenderer;
+
 import org.eclipse.jdt.core.dom.Statement;
 
 public class Parser {
@@ -51,6 +63,10 @@ public class Parser {
 	public static Map<SimpleName, Integer> class_attributesNumber = new HashMap<SimpleName, Integer>();
 	public static Map<SimpleName, Integer> method_statementsNumber = new HashMap<SimpleName, Integer>();
 	public static Map<SimpleName, Integer> method_paramNumber = new HashMap<SimpleName, Integer>();
+	
+	public static CallGraph callGraph;
+    public static List<Edge> edgeList = new ArrayList<Edge>();
+    public static List<Node> nodeList = new ArrayList<Node>();
 	
 	public static void main(String[] args) throws IOException {
 
@@ -172,8 +188,50 @@ public class Parser {
 	            .stream().filter(x->x.getValue() > num)
 	            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 	    System.out.println("Classes that have more than "+ num + " methods: " + class_methodsNumberX);
+	    
+//	    create call graph
+	    callGraph = new CallGraph(nodeList, edgeList);
+	    createCallGraph();
 	}
+	
+  public static void createCallGraph() {
 
+      File imgFile = new File("./graph.png");
+      try {
+          imgFile.createNewFile();
+      } catch (IOException e) {
+          // TODO Auto-generated catch block
+          e.printStackTrace();
+      }
+
+      DefaultDirectedGraph<String, DefaultEdge> g = 
+        new DefaultDirectedGraph<String, DefaultEdge>(DefaultEdge.class);
+      
+      for (Node node : nodeList) {
+          g.addVertex(node.getNodeName());
+      }
+      
+      for (Edge edge : edgeList) {
+          g.addEdge(edge.getDepartNode().getNodeName(), edge.getArriveNode().getNodeName());
+      }
+      
+      JGraphXAdapter<String, DefaultEdge> graphAdapter = 
+            new JGraphXAdapter<String, DefaultEdge>(g);
+          mxIGraphLayout layout = new mxCircleLayout(graphAdapter);
+          layout.execute(graphAdapter.getDefaultParent());
+          
+          BufferedImage image = 
+            mxCellRenderer.createBufferedImage(graphAdapter, null, 2, Color.WHITE, true, null);
+//        File imgFile = new File("src/test/resources/graph.png");
+          try {
+          ImageIO.write(image, "PNG", imgFile);
+      } catch (IOException e) {
+          // TODO Auto-generated catch block
+          e.printStackTrace();
+      }
+
+//        assertTrue(imgFile.exists());
+  }
 	// read all java files from specific folder
 	public static ArrayList<File> listJavaFilesForFolder(final File folder) {
 		ArrayList<File> javaFiles = new ArrayList<File>();
@@ -283,7 +341,7 @@ public class Parser {
 		
 			for (MethodDeclaration method : visitor.getMethods()) {
 				System.out.println("Method name: " + method.getName()
-						+ " Return type: " + method.getReturnType2());
+						+ ". Return type: " + method.getReturnType2());
 				method_paramNumber.put(method.getName(), method.parameters().size());
 			}
 			methodsNumber = methodsNumber + visitor.getMethodsNumber();
@@ -345,13 +403,25 @@ public class Parser {
 		MethodDeclarationVisitor visitor1 = new MethodDeclarationVisitor();
 		parse.accept(visitor1);
 		for (MethodDeclaration method : visitor1.getMethods()) {
-
 			MethodInvocationVisitor visitor2 = new MethodInvocationVisitor();
 			method.accept(visitor2);
-
 			for (MethodInvocation methodInvocation : visitor2.getMethods()) {
-				System.out.println("method " + method.getName() + " invoc method "
-						+ methodInvocation.getName());
+				System.out.println("method " + method.getName() 
+				        + " invoc method " + methodInvocation.getName());
+				Node caller = new Node(method.getName().toString());
+                Node callee = new Node(methodInvocation.getName().toString());
+                if (!nodeList.stream().anyMatch(s -> s.equals(caller.getNodeName()))) {
+                    nodeList.add(caller);
+                }
+                if (!nodeList.stream().anyMatch(s -> s.equals(callee.getNodeName()))) {
+                    nodeList.add(callee);
+                }
+               
+                Edge call = new Edge(caller, callee);
+                if (!edgeList.contains(call)) { // ?
+                    edgeList.add(call);
+                }
+                
 			}
 
 		}
