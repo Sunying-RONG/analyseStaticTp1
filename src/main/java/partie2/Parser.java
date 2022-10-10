@@ -110,7 +110,7 @@ public class Parser {
 		System.out.println("Package number of application: " + packages.size() + "\n");
 		System.out.println("Class number of application: " + classesNumber + "\n");
 		System.out.println("Attribute number of application: " + attributesNumber + "\n");
-		System.out.println("Method number (in classes) of application: " + methodsNumber + "\n");
+		System.out.println("Method number (of classes) of application: " + methodsNumber + "\n");
 		System.out.println("All statement number of application: " + statementsAllNumber + "\n");
 		System.out.println("Statement number of application's methods: " + statementsNumberMethod + "\n");
 		
@@ -151,7 +151,7 @@ public class Parser {
 //	    Classes that are part of the two previous categories at the same time
 	    List<SimpleName> commonClasTop = new ArrayList<SimpleName>(clasAttributeTop);
 	    commonClasTop.retainAll(clasMethodTop);
-	    System.out.println("\n" + "The 10% of classes that have the most methods: ");
+	    System.out.println("\n" + "The 10% of classes that have the most attributes and methods: ");
 	    commonClasTop.forEach(System.out::println);
 	    
 //	    The 10% of methods that have the largest number of lines of code (for class)
@@ -166,7 +166,7 @@ public class Parser {
 	    int top10MethodNum = Math.round(methodsNumber*0.1) < 1 ? 1 : (int)Math.round(methodsNumber*0.1);
 	    List<SimpleName> methodStateTop = new ArrayList<SimpleName>(method_statementsNumber_sorted.keySet())
 	    		.subList(0, top10MethodNum);
-	    System.out.println("The 10% of methods that have the largest number of statements (for class): ");
+	    System.out.println("The 10% of methods that have the largest number of statements (for methods of classes): ");
 	    methodStateTop.forEach(System.out::println);
 	    
 //	    The maximum number of parameters compared to all methods of the application
