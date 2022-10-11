@@ -46,7 +46,7 @@ import org.eclipse.jdt.core.dom.Statement;
 
 public class Parser {
 	
-	public static final String projectPath = "/Users/rongsunying/eclipse-workspace/test1carre/";
+	public static final String projectPath = "/Users/rongsunying/eclipse-workspace/promotion/";
 	public static final String projectSourcePath = projectPath + "/src";
 	// MacOs
 	public static final String jrePath = "/Library/Java/JavaVirtualMachines/jdk1.8.0_221.jdk/Contents/Home/jre/";
@@ -252,7 +252,7 @@ public class Parser {
 		ASTParser parser = ASTParser.newParser(AST.JLS4); // java +1.6
 		parser.setResolveBindings(true);
 		parser.setKind(ASTParser.K_COMPILATION_UNIT);
- 
+
 		parser.setBindingsRecovery(true);
  
 		Map options = JavaCore.getOptions();
@@ -399,17 +399,24 @@ public class Parser {
 	
 	// navigate method invocations inside method
 	public static void printMethodInvocationInfo(CompilationUnit parse) {
-
+	    
 		MethodDeclarationVisitor visitor1 = new MethodDeclarationVisitor();
 		parse.accept(visitor1);
 		for (MethodDeclaration method : visitor1.getMethods()) {
 			MethodInvocationVisitor visitor2 = new MethodInvocationVisitor();
 			method.accept(visitor2);
+			String methodReceiver = method.resolveBinding().getDeclaringClass().getQualifiedName();
+//			System.out.println("$$method receiver: "+methodReceiver);
 			for (MethodInvocation methodInvocation : visitor2.getMethods()) {
+			    String methodInvocReceiver = methodInvocation.resolveMethodBinding().getDeclaringClass().getQualifiedName();
 				System.out.println("method " + method.getName() 
-				        + " invoc method " + methodInvocation.getName());
-				Node caller = new Node(method.getName().toString());
-                Node callee = new Node(methodInvocation.getName().toString());
+				        + " invoc method " + methodInvocation.getName()
+				        + " #receiverClass: " + methodInvocReceiver);
+
+				Node caller = new Node(methodReceiver + "." + method.getName().toString());
+                Node callee = new Node(methodInvocReceiver + "." + methodInvocation.getName().toString());
+//                System.out.println("methodReceiver: "+methodReceiver+"\n"
+//                        + "methodInvocReceiver: "+methodInvocReceiver);
                 if (!nodeList.stream().anyMatch(s -> s.equals(caller.getNodeName()))) {
                     nodeList.add(caller);
                 }
