@@ -1,4 +1,6 @@
 # analyseStaticTp1
+This project is to generate a call graph.  
+
 1. Git clone https://github.com/Sunying-RONG/analyseStaticTp1.git  
 Code of TP1 part 2 is in /analyseStaticTp1/src/main/java/partie2
 2. In eclipse, import maven project analyseStaticTp1
